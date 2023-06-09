@@ -447,6 +447,8 @@ bool QSerialPortPrivate::waitForReadyRead(int msecs)
     if (!writeStarted && !_q_startAsyncWrite())
         return false;
 
+    const qint64 initialReadBufferSize = buffer.size();
+    qint64 currentReadBufferSize = initialReadBufferSize;
     QDeadlineTimer deadline(msecs);
 
     do {
@@ -458,8 +460,9 @@ bool QSerialPortPrivate::waitForReadyRead(int msecs)
             if (result != WAIT_IO_COMPLETION)
                 continue;
         }
+        const qint64 readBytesForOneReadOperation = qint64(buffer.size()) - currentReadBufferSize;
 
-        if (readBytesTransferred > 0) {
+        if (readBytesTransferred > 0 || readBytesForOneReadOperation > 0) {
             readBytesTransferred = 0;
             return true;
         }
